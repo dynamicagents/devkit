@@ -121,7 +121,7 @@ describe("checks every repository gets", () => {
 
     assert.match(
       failure,
-      /imports "ghost", but ghost is in neither dependencies nor peerDependencies/
+      /imports "ghost", but ghost is in none of dependencies, peerDependencies or optionalDependencies/
     );
   });
 
@@ -194,12 +194,79 @@ describe("checks every repository gets", () => {
 
     assert.deepEqual(failures, []);
   });
+
+  it("allows an optional dependency, which npm installs wherever it can", () => {
+    const failures = failuresOf(
+      {
+        exports: { "./a": "./dist/a.js" },
+        optionalDependencies: { opt: "^1" }
+      },
+      {
+        "dist/a.js": 'export const a = await import("opt").catch(() => null);\n'
+      }
+    );
+
+    assert.deepEqual(failures, []);
+  });
+});
+
+describe("which targets an export names", () => {
+  it("walks every condition's target, at any depth, past a null exclusion", () => {
+    const failures = failuresOf(
+      {
+        exports: {
+          "./a": {
+            import: { types: "./dist/a.d.ts", default: "./dist/a.js" }
+          },
+          "./b": { require: "./dist/b.js" },
+          "./c": { default: "./dist/c.js" },
+          "./internal/*": null
+        }
+      },
+      {
+        "dist/a.js": 'import "ghost";\n',
+        "dist/a.d.ts":
+          'import type { P } from "phantom";\nexport type A = P;\n',
+        "dist/b.js": 'require("spook");\n',
+        "dist/c.js": 'import "wraith";\n'
+      }
+    );
+
+    assert.equal(failures.length, 4, failures.join("\n"));
+    assert.match(failures.join("\n"), /"\.\/a" imports "ghost"/);
+    assert.match(failures.join("\n"), /"\.\/a" declares a type from "phantom"/);
+    assert.match(failures.join("\n"), /"\.\/b" imports "spook"/);
+    assert.match(failures.join("\n"), /"\.\/c" imports "wraith"/);
+  });
+
+  it("reads a string as the shorthand for a lone root entry", () => {
+    const failures = failuresOf(
+      { exports: "./dist/index.js" },
+      { "dist/index.js": 'import "ghost";\n' },
+      { exports: { forbidRootExport: true } }
+    );
+
+    assert.equal(failures.length, 2, failures.join("\n"));
+    assert.match(failures[0], /"\." imports "ghost"/);
+    assert.match(failures[1], /"\." is exported/);
+  });
 });
 
 describe("what a specifier is read out of", () => {
   // Each of these was a way for the gate to answer the wrong question, and the
   // two directions cost differently: a missed import is a package published
   // broken, and a specifier read out of prose is a gate somebody turns off.
+
+  it("still sees an import below an astral character", () => {
+    const failure = only(
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        { "dist/a.js": '// 😀\nimport "ghost";\n' }
+      )
+    );
+
+    assert.match(failure, /imports "ghost"/);
+  });
 
   it("still sees an import below a regex literal carrying `/*`", () => {
     const failure = only(

@@ -80,7 +80,9 @@ function regexEnd(text, from) {
 export function lex(text) {
   const comments = [];
   const strings = [];
-  const code = [...text];
+  // Code units, not code points: every offset here indexes `text` in UTF-16, and
+  // spreading it would shift each one after an astral character such as an emoji.
+  const code = text.split("");
 
   /** Blank [from, to) in `code`, keeping newlines so offsets and lines both hold. */
   const blank = (from, to) => {

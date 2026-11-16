@@ -29,6 +29,15 @@ describe("the code mask", () => {
     assert.equal(code(text).length, text.length);
   });
 
+  it("stays aligned past an astral character, which is two code units", () => {
+    const text = '// 😀\nimport "ghost";\n';
+    const [ghost] = lex(text).strings;
+
+    assert.equal(code(text).length, text.length);
+    assert.equal(text[ghost.start], '"');
+    assert.equal(code(text)[ghost.start], '"');
+  });
+
   it("keeps newlines, so a line counted from an offset is the right line", () => {
     const text = "/* one\ntwo */\nconst a = 1;\n";
 

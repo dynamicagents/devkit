@@ -190,6 +190,32 @@ const ownDir = (root, subpath) =>
   path.join(root, "dist", subpath.replace(/^\.\//, ""));
 
 /**
+ * `exports` as subpaths. A string, an array, or an object of conditions rather
+ * than subpaths is Node's shorthand for a lone `"."` entry.
+ */
+const subpathMap = (exports) => {
+  if (exports === undefined || exports === null) return {};
+  const bySubpath =
+    typeof exports === "object" &&
+    !Array.isArray(exports) &&
+    Object.keys(exports).every((key) => key.startsWith("."));
+  return bySubpath ? exports : { ".": exports };
+};
+
+/**
+ * Every file an `exports` entry names, under any condition at any depth.
+ *
+ * Each condition's target is the one some consumer's resolver picks, so each is
+ * an entry: a `default` or `require` target reaches a graph as surely as an
+ * `import` one. `null` excludes a path rather than naming one.
+ */
+function* targetsOf(entry) {
+  if (typeof entry === "string") yield entry;
+  else if (entry !== null && typeof entry === "object")
+    for (const nested of Object.values(entry)) yield* targetsOf(nested);
+}
+
+/**
  * Every reason the built output at `root` is not safe to publish.
  *
  * `config` is the loaded `devkit.config.mjs`; a repository that writes no
@@ -211,20 +237,18 @@ export function verifyExports(root, config) {
   // --- 1. every exports target exists ---------------------------------------
 
   const subpathEntries = [];
-  /** Every subpath's `types` target, for the checks that must see erased imports. */
+  /** Every `.d.ts` an export names, for the checks that must see erased imports. */
   const typeEntries = [];
-  const subpaths = Object.entries(pkg.exports ?? {});
+  const exportsBySubpath = subpathMap(pkg.exports);
+  const subpaths = Object.entries(exportsBySubpath);
   for (const [subpath, value] of subpaths) {
-    const targets = typeof value === "string" ? [value] : Object.values(value);
-    for (const target of targets) {
+    for (const target of new Set(targetsOf(value))) {
       if (!existsSync(path.join(root, target))) {
         fail(`exports "${subpath}" points at ${target}, which does not exist`);
       }
+      if (target.endsWith(".d.ts")) typeEntries.push([subpath, target]);
+      else if (target.endsWith(".js")) subpathEntries.push([subpath, target]);
     }
-    const runtime = typeof value === "string" ? value : value.import;
-    if (runtime?.endsWith(".js")) subpathEntries.push([subpath, runtime]);
-    const types = typeof value === "string" ? undefined : value.types;
-    if (types?.endsWith(".d.ts")) typeEntries.push([subpath, types]);
   }
 
   // --- 2, 3 & 4. what reached dist/ -----------------------------------------
@@ -334,12 +358,14 @@ export function verifyExports(root, config) {
    * may reach them, and subpath imports (`ai/test`, `agents/experimental/...`) are
    * reduced to their package name before the lookup. The package's own name is
    * allowed: a self-reference resolves through `exports`, which check 1 has
-   * already verified.
+   * already verified. An optional dependency is declared too: npm installs it
+   * wherever it can, and code importing one is written for where it cannot.
    */
   const declared = new Set([
     pkg.name,
     ...Object.keys(pkg.dependencies ?? {}),
-    ...Object.keys(pkg.peerDependencies ?? {})
+    ...Object.keys(pkg.peerDependencies ?? {}),
+    ...Object.keys(pkg.optionalDependencies ?? {})
   ]);
 
   // Subsumed under `zeroDependencies`, which has already failed every bare
@@ -360,8 +386,8 @@ export function verifyExports(root, config) {
         const name = packageName(spec);
         if (!declared.has(name)) {
           fail(
-            `subpath "${subpath}" ${kind} "${spec}", but ${name} is in neither ` +
-              `dependencies nor peerDependencies — it resolves here only because ` +
+            `subpath "${subpath}" ${kind} "${spec}", but ${name} is in none of ` +
+              `dependencies, peerDependencies or optionalDependencies — it resolves here only because ` +
               `npm hoisted it, and will not resolve under pnpm or Yarn PnP`
           );
         }
@@ -371,7 +397,7 @@ export function verifyExports(root, config) {
 
   // --- what the repository asked for, on the manifest -----------------------
 
-  if (rules.forbidRootExport === true && pkg.exports?.["."]) {
+  if (rules.forbidRootExport === true && exportsBySubpath["."]) {
     fail(
       `"." is exported. A root barrel re-exports every part, so importing one ` +
         `pulls in all of them — the exact promise this package makes. Keep subpaths only.`
