@@ -1,0 +1,52 @@
+{
+  "name": "@dynamicagents/devkit",
+  "version": "0.1.0",
+  "description": "The repo-level checkers the Dynamic Agents repositories share: comment references, peer ranges, runtime types, the publish gate, and a local cross-repo install.",
+  "license": "Apache-2.0",
+  "author": "Dynamic Agents",
+  "homepage": "https://github.com/dynamicagents/devkit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dynamicagents/devkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dynamicagents/devkit/issues"
+  },
+  "type": "module",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "devkit-link-local": "src/link-local.mjs",
+    "devkit-verify-exports": "src/verify-exports.mjs",
+    "devkit-verify-peer-ranges": "src/verify-peer-ranges.mjs",
+    "devkit-verify-references": "src/verify-references.mjs",
+    "devkit-verify-runtime-types": "src/verify-runtime-types.mjs"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "check": "prettier --check . && eslint .",
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm run check && npm test",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "semver": "^7.8.5"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.10.1"
+  }
+}

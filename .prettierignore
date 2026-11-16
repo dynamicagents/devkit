@@ -1,0 +1,5 @@
+node_modules/
+
+# Agent config, written by tools or linked in. A checkout without symlinks
+# writes each link as a file holding its target, which --check would fail.
+.claude/
