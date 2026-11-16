@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  # Every pull request, not only those into `main`: a stacked PR targets its
+  # parent, and a `branches: [main]` filter reports "no checks" on it.
+  pull_request:
+
+# Superseded PR runs are cancelled; main is not, because Release keys off the
+# run that Test completes there.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v7
+        with:
+          # One source of truth with local dev; `engines` requires >=24.
+          node-version-file: .nvmrc
+
+      - run: npm ci
+
+      - run: npm test

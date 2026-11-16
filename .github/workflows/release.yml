@@ -1,0 +1,22 @@
+name: Release
+
+# The protocol, and the reason behind each of its guards, is dev-agents'
+# `.github/workflows/npm-release.yml`. This file keeps what a called workflow
+# cannot: the trigger, and its own name, which is the one this package's npm
+# trusted publisher validates.
+on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  release:
+    # The ceiling the called jobs narrow: only the publish job mints an OIDC
+    # token, and only the tag job writes.
+    permissions:
+      contents: write
+      id-token: write
+    uses: dynamicagents/dev-agents/.github/workflows/npm-release.yml@main
