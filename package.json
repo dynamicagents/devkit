@@ -26,7 +26,12 @@
     "devkit-verify-runtime-types": "src/verify-runtime-types.mjs"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "check": "prettier --check . && eslint .",
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm run check && npm test",
+    "prepare": "husky"
   },
   "dependencies": {
     "semver": "^7.8.5"
@@ -36,5 +41,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.10.1"
   }
 }

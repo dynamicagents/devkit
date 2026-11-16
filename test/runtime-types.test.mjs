@@ -8,7 +8,10 @@
  */
 import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { RUNTIME_TYPES, verifyRuntimeTypes } from "../src/lib/runtime-types.mjs";
+import {
+  RUNTIME_TYPES,
+  verifyRuntimeTypes
+} from "../src/lib/runtime-types.mjs";
 import { repositories } from "./helpers.mjs";
 
 const { repo, clean } = repositories();

@@ -53,13 +53,13 @@ const latestOf = async (peer) => {
 };
 
 const latest = new Map(
-  await Promise.all(
-    checked.map(async ([peer]) => [peer, await latestOf(peer)])
-  )
+  await Promise.all(checked.map(async ([peer]) => [peer, await latestOf(peer)]))
 );
 const { rows, outsideRange, untested } = classifyLatest(checked, latest);
 
-console.log(`\n  ${"peer".padEnd(28)} ${"range".padEnd(22)} installed → latest`);
+console.log(
+  `\n  ${"peer".padEnd(28)} ${"range".padEnd(22)} installed → latest`
+);
 
 for (const [peer, range, version, newest, verdict] of rows) {
   console.log(

@@ -265,8 +265,9 @@ describe("the files it reads", () => {
 
   it("refuses to pass when it has read nothing at all", async () => {
     await assert.rejects(
-      verifyReferences(repo({ "docs/a.md": "// see ./gone.ts\n" }))
-    , /nothing to check/);
+      verifyReferences(repo({ "docs/a.md": "// see ./gone.ts\n" })),
+      /nothing to check/
+    );
   });
 });
 
@@ -331,7 +332,7 @@ describe("the config", () => {
       verifyReferences(
         repo({
           "devkit.config.mjs":
-            "export default { references: { scan: [], loose: [\"README.md\"] } };\n",
+            'export default { references: { scan: [], loose: ["README.md"] } };\n',
           "README.md": "see /gone.ts\n"
         })
       ),

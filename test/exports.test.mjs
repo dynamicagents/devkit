@@ -31,9 +31,12 @@ const only = (failures) => {
 describe("checks every repository gets", () => {
   it("fails on an exports target that did not emit", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/b.js": "export const b = 1;\n"
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/b.js": "export const b = 1;\n"
+        }
+      )
     );
 
     assert.match(failure, /points at \.\/dist\/a\.js, which does not exist/);
@@ -41,10 +44,13 @@ describe("checks every repository gets", () => {
 
   it("fails on an extensionless relative import in a .js", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'export * from "./b";\n',
-        "dist/b.js": "export const b = 1;\n"
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": 'export * from "./b";\n',
+          "dist/b.js": "export const b = 1;\n"
+        }
+      )
     );
 
     assert.match(failure, /imports "\.\/b" without a \.js extension/);
@@ -55,7 +61,9 @@ describe("checks every repository gets", () => {
     // only here, so scanning one file class leaves the other unchecked.
     const failure = only(
       failuresOf(
-        { exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } } },
+        {
+          exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } }
+        },
         {
           "dist/a.js": "export const a = 1;\n",
           "dist/a.d.ts": 'export type { B } from "./b";\n',
@@ -85,20 +93,30 @@ describe("checks every repository gets", () => {
 
   it("fails on a runtime subpath that can reach a test-only module", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'export * from "./b.js";\n',
-        "dist/b.js": 'import { readFileSync } from "node:fs";\nexport const b = readFileSync;\n'
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": 'export * from "./b.js";\n',
+          "dist/b.js":
+            'import { readFileSync } from "node:fs";\nexport const b = readFileSync;\n'
+        }
+      )
     );
 
-    assert.match(failure, /runtime subpath "\.\/a" can reach test-only modules: node:fs/);
+    assert.match(
+      failure,
+      /runtime subpath "\.\/a" can reach test-only modules: node:fs/
+    );
   });
 
   it("fails on a bare specifier the manifest does not declare", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'import { x } from "ghost";\nexport const a = x;\n'
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": 'import { x } from "ghost";\nexport const a = x;\n'
+        }
+      )
     );
 
     assert.match(
@@ -112,10 +130,13 @@ describe("checks every repository gets", () => {
     // reachable only there breaks a consumer's typecheck and nothing else.
     const failure = only(
       failuresOf(
-        { exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } } },
+        {
+          exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } }
+        },
         {
           "dist/a.js": "export const a = 1;\n",
-          "dist/a.d.ts": 'import type { G } from "ghost";\nexport declare const a: G;\n'
+          "dist/a.d.ts":
+            'import type { G } from "ghost";\nexport declare const a: G;\n'
         }
       )
     );
@@ -129,7 +150,9 @@ describe("checks every repository gets", () => {
     // hop, which is the graph that cannot see a type-only import at all.
     const failure = only(
       failuresOf(
-        { exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } } },
+        {
+          exports: { "./a": { types: "./dist/a.d.ts", import: "./dist/a.js" } }
+        },
         {
           "dist/a.js": 'export * from "./b.js";\n',
           "dist/a.d.ts": 'export type { B } from "./b.js";\n',
@@ -145,23 +168,29 @@ describe("checks every repository gets", () => {
   it("reads code and not a comment that discusses an import", () => {
     // These checks are documented with the specifiers they were written for, so
     // a scan without comment stripping re-reports its own prose.
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": [
-        '// import { x } from "ghost";',
-        '/** `import "node:fs"` is what this used to do. */',
-        'const kind = "image/*";',
-        "export const a = kind;",
-        ""
-      ].join("\n")
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js": [
+          '// import { x } from "ghost";',
+          '/** `import "node:fs"` is what this used to do. */',
+          'const kind = "image/*";',
+          "export const a = kind;",
+          ""
+        ].join("\n")
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
 
   it("allows the package's own name as a specifier", () => {
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": 'export * from "fixture/other";\n'
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js": 'export * from "fixture/other";\n'
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
@@ -174,9 +203,12 @@ describe("what a specifier is read out of", () => {
 
   it("still sees an import below a regex literal carrying `/*`", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'const pattern = /[/*]/;\nimport "ghost";\n'
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": 'const pattern = /[/*]/;\nimport "ghost";\n'
+        }
+      )
     );
 
     assert.match(failure, /imports "ghost"/);
@@ -184,9 +216,12 @@ describe("what a specifier is read out of", () => {
 
   it("still sees a realm leak below one with no closing `*` and slash", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'const trailing = /\\/*$/;\nimport "node:fs";\n'
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": 'const trailing = /\\/*$/;\nimport "node:fs";\n'
+        }
+      )
     );
 
     assert.match(failure, /can reach test-only modules: node:fs/);
@@ -194,9 +229,12 @@ describe("what a specifier is read out of", () => {
 
   it("reads a single-quoted specifier", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": "import 'ghost';\n"
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": "import 'ghost';\n"
+        }
+      )
     );
 
     assert.match(failure, /imports "ghost"/);
@@ -204,10 +242,13 @@ describe("what a specifier is read out of", () => {
 
   it("reads a single-quoted relative specifier for its extension", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": "export * from './b';\n",
-        "dist/b.js": "export const b = 1;\n"
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": "export * from './b';\n",
+          "dist/b.js": "export const b = 1;\n"
+        }
+      )
     );
 
     assert.match(failure, /without a \.js extension/);
@@ -226,9 +267,13 @@ describe("what a specifier is read out of", () => {
   });
 
   it("leaves a trailing comment that names an import alone", () => {
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": 'export const a = 1; // import "ghost" is deliberately not\n'
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js":
+          'export const a = 1; // import "ghost" is deliberately not\n'
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
@@ -236,48 +281,64 @@ describe("what a specifier is read out of", () => {
   it("leaves a specifier quoted inside a string alone", () => {
     // Prompt copy and documentation strings are values, and a gate that reads
     // them blocks packing a package that imports nothing of the kind.
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": [
-        "export const help = `Use import \"ghost\" in an example`;",
-        "export const also = 'require(\"ghost\")';",
-        ""
-      ].join("\n")
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js": [
+          'export const help = `Use import "ghost" in an example`;',
+          "export const also = 'require(\"ghost\")';",
+          ""
+        ].join("\n")
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
 
   it("leaves a method named `from` alone", () => {
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": 'export const a = Array.from("ghost");\n'
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js": 'export const a = Array.from("ghost");\n'
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
 
   it("still sees an import inside an interpolation, which is code", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": "export const a = `${await import('ghost')}`;\n"
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js": "export const a = `${await import('ghost')}`;\n"
+        }
+      )
     );
 
     assert.match(failure, /imports "ghost"/);
   });
 
   it("skips an interpolated specifier, which names no one module", () => {
-    const failures = failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-      "dist/a.js": "export const load = (n) => import(`./${n}.js`);\n"
-    });
+    const failures = failuresOf(
+      { exports: { "./a": "./dist/a.js" } },
+      {
+        "dist/a.js": "export const load = (n) => import(`./${n}.js`);\n"
+      }
+    );
 
     assert.deepEqual(failures, []);
   });
 
   it("reads a specifier a line break separates from its keyword", () => {
     const failure = only(
-      failuresOf({ exports: { "./a": "./dist/a.js" } }, {
-        "dist/a.js": 'import {\n  x\n} from\n  "ghost";\nexport const a = x;\n'
-      })
+      failuresOf(
+        { exports: { "./a": "./dist/a.js" } },
+        {
+          "dist/a.js":
+            'import {\n  x\n} from\n  "ghost";\nexport const a = x;\n'
+        }
+      )
     );
 
     assert.match(failure, /imports "ghost"/);
@@ -286,7 +347,8 @@ describe("what a specifier is read out of", () => {
 
 describe("the checks a repository asks for", () => {
   const testHarness = {
-    "dist/testing/index.js": 'import { it } from "vitest";\nexport const t = it;\n'
+    "dist/testing/index.js":
+      'import { it } from "vitest";\nexport const t = it;\n'
   };
   const harnessManifest = {
     peerDependencies: { vitest: ">=4" },
@@ -328,12 +390,20 @@ describe("the checks a repository asks for", () => {
     const sections = { exports: { nodeOnly: ["./daemon"] } };
 
     assert.deepEqual(
-      failuresOf(manifest, { "dist/daemon.js": 'import "node:fs";\n' }, sections),
+      failuresOf(
+        manifest,
+        { "dist/daemon.js": 'import "node:fs";\n' },
+        sections
+      ),
       []
     );
     assert.match(
       only(
-        failuresOf(manifest, { "dist/daemon.js": 'import "vitest";\n' }, sections)
+        failuresOf(
+          manifest,
+          { "dist/daemon.js": 'import "vitest";\n' },
+          sections
+        )
       ),
       /can reach test-only modules: vitest/
     );
@@ -371,13 +441,17 @@ describe("the checks a repository asks for", () => {
       failuresOf(
         {
           exports: {
-            "./one": { types: "./dist/one/index.d.ts", import: "./dist/one/index.js" },
+            "./one": {
+              types: "./dist/one/index.d.ts",
+              import: "./dist/one/index.js"
+            },
             "./two": "./dist/two/index.js"
           }
         },
         {
           "dist/one/index.js": "export const one = 1;\n",
-          "dist/one/index.d.ts": 'export type { Two } from "../two/index.js";\n',
+          "dist/one/index.d.ts":
+            'export type { Two } from "../two/index.js";\n',
           "dist/two/index.js": "export const two = 1;\n",
           "dist/two/index.d.ts": "export type Two = 1;\n"
         },
@@ -393,7 +467,9 @@ describe("the checks a repository asks for", () => {
 
     assert.deepEqual(failuresOf(manifest, files), []);
     assert.match(
-      only(failuresOf(manifest, files, { exports: { forbidRootExport: true } })),
+      only(
+        failuresOf(manifest, files, { exports: { forbidRootExport: true } })
+      ),
       /"\." is exported/
     );
   });
@@ -426,7 +502,9 @@ describe("the checks a repository asks for", () => {
     const failure = only(
       failuresOf(
         {},
-        { "dist/a.d.ts": 'import type { J } from "jose";\nexport type A = J;\n' },
+        {
+          "dist/a.d.ts": 'import type { J } from "jose";\nexport type A = J;\n'
+        },
         { exports: { zeroDependencies: true } }
       )
     );
@@ -445,7 +523,10 @@ describe("what it reports when there is nothing to report", () => {
             "./package.json": "./package.json"
           }
         },
-        { "dist/a.js": "export const a = 1;\n", "dist/a.d.ts": "export declare const a: 1;\n" }
+        {
+          "dist/a.js": "export const a = 1;\n",
+          "dist/a.d.ts": "export declare const a: 1;\n"
+        }
       ),
       config({})
     );

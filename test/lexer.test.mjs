@@ -86,11 +86,15 @@ describe("what it reads as a comment", () => {
   });
 
   it("keeps `image/*` a value rather than the start of one", () => {
-    assert.deepEqual(comments('const kind = "image/*";\n// real\n'), ["// real"]);
+    assert.deepEqual(comments('const kind = "image/*";\n// real\n'), [
+      "// real"
+    ]);
   });
 
   it("reads a division as a division, so what follows it still counts", () => {
-    assert.deepEqual(comments("const half = total / 2; // real\n"), ["// real"]);
+    assert.deepEqual(comments("const half = total / 2; // real\n"), [
+      "// real"
+    ]);
   });
 
   it("reads a regex where a keyword puts one, not a division", () => {
@@ -103,7 +107,7 @@ describe("what it reads as a comment", () => {
 
 describe("what it records as a string", () => {
   it("records both quote styles, and a template", () => {
-    assert.deepEqual(strings('const a = "x", b = \'y\', c = `z`;'), [
+    assert.deepEqual(strings("const a = \"x\", b = 'y', c = `z`;"), [
       "x",
       "y",
       "z"

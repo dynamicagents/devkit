@@ -290,7 +290,9 @@ export function verifyExports(root, config) {
         ownDir(root, home)
       );
       const trespass = [...files]
-        .filter((file) => !homes.some((home) => file.startsWith(home + path.sep)))
+        .filter(
+          (file) => !homes.some((home) => file.startsWith(home + path.sep))
+        )
         .map(relative);
       if (trespass.length > 0) {
         fail(
@@ -352,7 +354,8 @@ export function verifyExports(root, config) {
       ]) {
     for (const [subpath, target] of entries) {
       for (const spec of reachableFrom(path.join(root, target)).bare) {
-        if (spec.startsWith("node:") || spec.startsWith("cloudflare:")) continue;
+        if (spec.startsWith("node:") || spec.startsWith("cloudflare:"))
+          continue;
         if (!PACKAGE_SPECIFIER.test(spec) || /\s/.test(spec)) continue;
         const name = packageName(spec);
         if (!declared.has(name)) {

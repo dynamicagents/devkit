@@ -8,10 +8,7 @@
  */
 import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import {
-  classifyLatest,
-  verifyPeerRanges
-} from "../src/lib/peer-ranges.mjs";
+import { classifyLatest, verifyPeerRanges } from "../src/lib/peer-ranges.mjs";
 import { repositories } from "./helpers.mjs";
 
 const { repo, clean } = repositories();
@@ -134,9 +131,7 @@ describe("what the registry says, classified", () => {
       new Map([["agents", "0.34.0"]])
     );
 
-    assert.deepEqual(outsideRange, [
-      ["agents", ">=0.33.0 <0.34.0", "0.34.0"]
-    ]);
+    assert.deepEqual(outsideRange, [["agents", ">=0.33.0 <0.34.0", "0.34.0"]]);
     assert.deepEqual(untested, []);
     assert.equal(rows[0].at(-1), "outside the range");
   });
